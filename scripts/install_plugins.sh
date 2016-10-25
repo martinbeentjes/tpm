@@ -13,9 +13,22 @@ else # shell output functions
 fi
 
 clone() {
+	# TODO
+	#  1) Check for the amount of arguments
+	#  2) If 1:
+	#      Just clone!
+	#  3) If 2:
+	#      Clone and then checkout the repository to the correct version tag provided by $2
 	local plugin="$1"
-	cd "$(tpm_path)" &&
+	if [ "$#" -eq 1 ] || [ "$#" -eq 2 ]; then
+		cd "$(tpm_path)" &&	
 		GIT_TERMINAL_PROMPT=0 git clone --recursive "$plugin" >/dev/null 2>&1
+		if [ "$#" -eq 2 ]; then
+			local version="$2"
+			local path="$(tpm_path)$(plugin_remove_version $plugin)"
+			cd "$path" && GIT_TERMINAL_PROMPT=0 git checkout -b "$version" >/dev/null 2>&1 # Check how to retrieve the directory name!
+		fi
+	fi
 }
 
 # tries cloning:
