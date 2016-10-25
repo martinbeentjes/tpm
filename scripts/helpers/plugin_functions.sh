@@ -71,3 +71,10 @@ plugin_already_installed() {
 		cd "$plugin_path" &&
 		git remote >/dev/null 2>&1
 }
+
+plugin_remove_version() {
+	local plugin="$1"
+	local plugin_fix="$(plugin_name_helper "$plugin")"
+	plugin_fix="$(echo "$plugin_fix" | sed -E 's/(@v([0-9]+\.)+([0-9]+)|@v[0-9]+)//g')"
+	echo $plugin_fix
+}
