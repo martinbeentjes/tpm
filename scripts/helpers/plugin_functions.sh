@@ -15,8 +15,26 @@ _tpm_path() {
 
 _CACHED_TPM_PATH="$(_tpm_path)"
 
+# Get the absolute path to the users configuration file of TMux.
+# This includes a prioritized search on different locations.
+#
+_get_user_tmux_conf() {
+	# Define the different possible locations.
+	xdg_location="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+	default_location="$HOME/.tmux.conf"
+
+	# Search for the correct configuration file by priority.
+	if [ -f "$xdg_location" ]; then
+		echo "$xdg_location"
+
+	else
+		echo "$default_location"
+	fi
+}
+
 _tmux_conf_contents() {
-	cat /etc/tmux.conf ~/.tmux.conf 2>/dev/null
+	user_config=$(_get_user_tmux_conf)
+	cat /etc/tmux.conf "$user_config" 2>/dev/null
 	if [ "$1" == "full" ]; then # also output content from sourced files
 		local file
 		for file in $(_sourced_files); do
@@ -31,9 +49,22 @@ _sourced_files() {
 		awk '/^[ \t]*source(-file)? +/ { gsub(/'\''/,""); gsub(/'\"'/,""); print $2 }'
 }
 
+# Want to be able to abort in certain cases
+trap "exit 1" TERM
+export TOP_PID=$$
+
+_fatal_error_abort() {
+	echo >&2 "Aborting."
+	kill -s TERM $TOP_PID
+}
+
 # PUBLIC FUNCTIONS BELOW
 
 tpm_path() {
+	if [ "$_CACHED_TPM_PATH" == "/" ]; then
+		echo >&2 "FATAL: Tmux Plugin Manager not configured in tmux.conf"
+		_fatal_error_abort
+	fi
 	echo "$_CACHED_TPM_PATH"
 }
 
